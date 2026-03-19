@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 node_modules/
 .svelte-kit/
+.venv
+*.egg-info/
