@@ -1,16 +1,17 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
+from uuid import UUID
 
 class UserCreate(BaseModel):
     email: str
     password: str
     full_name: str
 
-class UserReponse(BaseModel):
+class UserResponse(BaseModel):
     model_config=ConfigDict(from_attributes=True)
 
-    id: str
+    id: UUID
     email: str
     full_name: str
 
@@ -24,7 +25,7 @@ class IssueCreate(BaseModel):
 
 class IssueResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    id: str
+    id: UUID
     title: str
     description: str
     severity: str
@@ -32,3 +33,11 @@ class IssueResponse(BaseModel):
     assigned_to: str
     created_by: str
     created_at: datetime
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
