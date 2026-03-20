@@ -1,10 +1,9 @@
-import { get } from 'svelte/store'
-import { authStore } from './stores/auth'
+import { authStore } from './stores/auth.svelte'
 
 const BASE_URL = 'http://localhost:8000'
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
-    const { accessToken } = get(authStore)
+    const accessToken = authStore.accessToken
 
     const headers: Record<string, string> = {
 

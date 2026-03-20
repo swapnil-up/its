@@ -1,7 +1,7 @@
 <script lang="ts">
     import './layout.css';
     import favicon from '$lib/assets/favicon.svg';
-    import { isAuthenticated } from '$lib/stores/auth';
+    import { authStore } from '$lib/stores/auth.svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
 
@@ -12,7 +12,7 @@
     $effect(() => {
         const isPublic = PUBLIC_ROUTES.includes($page.url.pathname);
         
-        if (!$isAuthenticated && !isPublic) {
+        if (!authStore.isAuthenticated && !isPublic) {
             goto('/login');
         }
     });

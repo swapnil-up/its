@@ -22,7 +22,7 @@ def db_health(db:Session = Depends(get_db)):
 
 @app.get("/me")
 def me(current_user: User = Depends(get_current_user)):
-    return {"email": current_user.email, "id": str(current_user.id)}
+    return {"email": current_user.email, "id": str(current_user.id), "full_name": current_user.full_name}
 
 app.add_middleware(
     CORSMiddleware,
