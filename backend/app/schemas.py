@@ -2,6 +2,19 @@ from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
+from enum import Enum as PyEnum
+
+class SeverityEnum(str, PyEnum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+    critical = "critical"
+
+class StatusEnum(str, PyEnum):
+    new = "new"
+    in_progress = "in_progress"
+    resolved = "resolved"
+    closed = "closed"
 
 class UserCreate(BaseModel):
     email: str
@@ -19,9 +32,15 @@ class UserResponse(BaseModel):
 class IssueCreate(BaseModel):
     title: str
     description: str
-    severity: Optional[str]
-    status: Optional[str]
-    assigned_to: Optional[str]
+    severity: SeverityEnum = SeverityEnum.low
+    assigned_to: Optional[UUID]= None 
+
+class IssueUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    severity: Optional[SeverityEnum] = SeverityEnum.low 
+    status: Optional[StatusEnum]  = None
+    assigned_to: Optional[UUID] = None
 
 class IssueResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -30,9 +49,10 @@ class IssueResponse(BaseModel):
     description: str
     severity: str
     status: str
-    assigned_to: str
-    created_by: str
+    assigned_to: Optional[UUID] = None
+    created_by: UUID
     created_at: datetime
+    updated_at: datetime
 
 class Token(BaseModel):
     access_token: str

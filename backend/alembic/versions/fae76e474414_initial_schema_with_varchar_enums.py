@@ -1,8 +1,8 @@
-"""initial tables
+"""initial_schema_with_varchar_enums
 
-Revision ID: 660ab42b08a5
+Revision ID: fae76e474414
 Revises: 
-Create Date: 2026-03-19 07:55:20.878448
+Create Date: 2026-03-20 07:58:28.544060
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '660ab42b08a5'
+revision: str = 'fae76e474414'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,11 +33,13 @@ def upgrade() -> None:
     op.create_table('issues',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=False),
-    sa.Column('description', sa.String(length=100), nullable=False),
-    sa.Column('severity', sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='issueseverity'), nullable=False),
-    sa.Column('status', sa.Enum('NEW', 'INPROGRESS', 'RESOLVED', 'CLOSED', name='issuestatus'), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('severity', sa.Enum('low', 'medium', 'high', 'critical', name='issueseverity', native_enum=False), nullable=False),
+    sa.Column('status', sa.Enum('new', 'in_progress', 'resolved', 'closed', name='issuestatus', native_enum=False), nullable=False),
     sa.Column('created_by', sa.Uuid(), nullable=False),
-    sa.Column('assigned_to', sa.Uuid(), nullable=False),
+    sa.Column('assigned_to', sa.Uuid(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['assigned_to'], ['users.id'], ),
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')

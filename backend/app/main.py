@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from .database import get_db
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth
+from .routers import auth, issues
 
 from .core.dependencies import get_current_user
 from .models import User
@@ -33,3 +33,4 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(issues.router)

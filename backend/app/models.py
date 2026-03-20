@@ -6,16 +6,16 @@ import uuid
 from datetime import datetime
 
 class IssueSeverity(enum.Enum):
-    LOW="low"
-    MEDIUM="medium"
-    HIGH="high"
-    CRITICAL="critical"
+    low="low"
+    medium="medium"
+    high="high"
+    critical="critical"
 
 class IssueStatus(enum.Enum):
-    NEW="new"
-    INPROGRESS="in_progress"
-    RESOLVED="resolved"
-    CLOSED="closed"
+    new="new"
+    in_progress="in_progress"
+    resolved="resolved"
+    closed="closed"
 
 class User(Base):
     __tablename__="users"
@@ -31,8 +31,8 @@ class Issue(Base):
     id: Mapped[uuid.UUID]=mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     title: Mapped[str]=mapped_column(String(100), nullable=False)
     description: Mapped[str]=mapped_column(Text)
-    severity: Mapped[IssueSeverity]=mapped_column(Enum(IssueSeverity), default=IssueSeverity.LOW)
-    status: Mapped[IssueStatus]=mapped_column(Enum(IssueStatus), default=IssueStatus.NEW)
+    severity: Mapped[IssueSeverity]=mapped_column(Enum(IssueSeverity, native_enum=False), default=IssueSeverity.low)
+    status: Mapped[IssueStatus]=mapped_column(Enum(IssueStatus, native_enum=False), default=IssueStatus.new)
     created_by: Mapped[uuid.UUID]=mapped_column(ForeignKey("users.id"))
     assigned_to: Mapped[uuid.UUID]=mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
