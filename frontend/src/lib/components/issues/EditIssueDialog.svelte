@@ -6,22 +6,26 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Select from '$lib/components/ui/select';
 	import { apiFetch } from '$lib/api';
-	import type { Issue } from '$lib/types';
+	import type { Issue, User } from '$lib/types';
 
-	let { onUpdated, issue }: { onUpdated: () => void; issue: Issue } = $props();
+	let { onUpdated, issue, users }: { onUpdated: () => void; issue: Issue; users: User[] } =
+		$props();
 
 	let open = $state(false);
 	let description = $state('');
 	let severity = $state('low');
 	let loading = $state(false);
 	let error = $state<string | null>(null);
+	let assignee = $state<string>(issue.assigned_to ?? '');
 
 	let isValid = $derived(description.length > 0);
+	let assigneeName = $derived(users.find((u) => u.id === assignee)?.full_name ?? 'Unassigned');
 
 	$effect(() => {
 		if (open) {
 			description = issue.description;
 			severity = issue.severity;
+			assignee = issue.assigned_to ?? '';
 		}
 	});
 
@@ -30,7 +34,7 @@
 		error = null;
 		const res = await apiFetch(`/issues/${issue.id}`, {
 			method: 'PATCH',
-			body: JSON.stringify({ description, severity })
+			body: JSON.stringify({ description, severity, assigned_to: assignee || null })
 		});
 		if (res.ok) {
 			open = false;
@@ -69,6 +73,8 @@
 		<div class="space-y-4 py-2">
 			<Label for="desc">Description</Label>
 			<Textarea id="desc" bind:value={description} placeholder="Full details..." rows={4} />
+
+			<Label for="severity">Severity</Label>
 			<Select.Root type="single" bind:value={severity}>
 				<Select.Trigger>
 					{getLabel(severity, severityOptions)}
@@ -76,6 +82,19 @@
 				<Select.Content>
 					{#each severityOptions as opt}
 						<Select.Item value={opt.value}>{opt.label}</Select.Item>
+					{/each}
+				</Select.Content>
+			</Select.Root>
+
+			<Label for="assigned">Assigned To</Label>
+			<Select.Root type="single" bind:value={assignee}>
+				<Select.Trigger>
+					{assigneeName}
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Item value="">Unassigned</Select.Item>
+					{#each users as user}
+						<Select.Item value={user.id}>{user.full_name}</Select.Item>
 					{/each}
 				</Select.Content>
 			</Select.Root>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { apiFetch } from '$lib/api';
-	import type { Issue, IssueFilters } from '$lib/types';
+	import type { Issue, IssueFilters, User } from '$lib/types';
 	import IssueFiltersComponent from '$lib/components/issues/IssueFilters.svelte';
 	import IssueTable from '$lib/components/issues/IssueTable.svelte';
 	import CreateIssueDialog from '$lib/components/issues/CreateIssueDialog.svelte';
@@ -10,6 +10,7 @@
 	import { goto } from '$app/navigation';
 
 	let issues = $state<Issue[]>([]);
+	let users = $state<User[]>([]);
 	let loading = $state(true);
 	let filters = $state<IssueFilters>({ search: '', severity: null, status: null });
 
@@ -32,13 +33,25 @@
 		loading = false;
 	}
 
+	async function fetchUsers() {
+		loading = true;
+		const res = await apiFetch('/users');
+		if (res.ok) {
+			users = await res.json();
+		}
+		loading = false;
+	}
+
 	async function handleLogout() {
 		await apiFetch('/auth/logout', { method: 'POST' });
 		authStore.clearAuth();
 		goto('/login');
 	}
 
-	onMount(fetchIssue);
+	onMount(()=>{
+		fetchIssue()
+		fetchUsers()
+	});
 </script>
 
 <div class="min-h-screen bg-background">
@@ -57,6 +70,7 @@
 
 		<IssueTable
 			issues={filteredIssues}
+			users={users}
 			{loading}
 			currentUserId={authStore.user?.id ?? ''}
 			onDeleted={fetchIssue}

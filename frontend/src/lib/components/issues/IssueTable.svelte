@@ -5,16 +5,18 @@
 	import { Button } from '$lib/components/ui/button';
 	import EditIssueDialog from './EditIssueDialog.svelte';
 	import { apiFetch } from '$lib/api';
-	import type { Issue } from '$lib/types';
+	import type { Issue, User } from '$lib/types';
 
 	let {
 		issues = $bindable(),
+		users,
 		loading,
 		currentUserId,
 		onUpdated,
 		onDeleted
 	}: {
 		issues: Issue[];
+		users: User[];
 		loading: boolean;
 		currentUserId: string;
 		onUpdated: () => void;
@@ -27,6 +29,10 @@
 	const getLabel = (value: string | null, options: { label: string; value: string }[]) => {
 		if (!value) return null;
 		return options.find((o) => o.value === value)?.label;
+	};
+
+	const getUserName = (id: string) => {
+		return users.find((u) => u.id === id)?.full_name ?? 'Unknown';
 	};
 
 	const statusOptions = [
@@ -77,16 +83,19 @@
 	<Table.Root>
 		<Table.Header>
 			<Table.Row>
+				<Table.Head>ID</Table.Head>
 				<Table.Head>Title</Table.Head>
 				<Table.Head>Status</Table.Head>
 				<Table.Head>Severity</Table.Head>
-				<Table.Head>Created</Table.Head>
+				<Table.Head>Created By</Table.Head>
+				<Table.Head>Created At</Table.Head>
 				<Table.Head>Actions</Table.Head>
 			</Table.Row>
 		</Table.Header>
 		<Table.Body>
 			{#each issues as issue (issue.id)}
 				<Table.Row>
+					<Table.Cell>{issue.id.slice(0, 8)}</Table.Cell>
 					<Table.Cell>{issue.title}</Table.Cell>
 					<Table.Cell>
 						<Select.Root
@@ -120,11 +129,12 @@
 							</Select.Content>
 						</Select.Root>
 					</Table.Cell>
+					<Table.Cell>{getUserName(issue.created_by)}</Table.Cell>
 					<Table.Cell>{new Date(issue.created_at).toLocaleDateString()}</Table.Cell>
 					<Table.Cell>
 						<div class="flex gap-2">
 							<!-- <pre>{issue.created_by}//{currentUserId}</pre> -->
-							<EditIssueDialog {issue} {onUpdated} />
+							<EditIssueDialog {issue} {users} {onUpdated} />
 							{#if issue.created_by == currentUserId}
 								<Button
 									variant="ghost"
