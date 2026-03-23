@@ -79,7 +79,7 @@
 
 		<Dialog.Footer>
 			<Button variant="outline" onclick={() => (open = false)}>Cancel</Button>
-			<Button variant="destructive" disabled={loading} onclick={handleCreate}
+			<Button variant="destructive" disabled={!isValid || loading} onclick={handleCreate}
 				>{loading ? 'Creating...' : 'Create'}</Button
 			>
 		</Dialog.Footer>

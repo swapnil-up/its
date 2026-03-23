@@ -8,7 +8,7 @@
 	import type { Issue } from '$lib/types';
 
 	let {
-		issues,
+		issues = $bindable(),
 		loading,
 		currentUserId,
 		onUpdated,
@@ -24,10 +24,37 @@
 	let deleteItem = $state<Issue | null>(null);
 	let deleting = $state(false);
 
+	const getLabel = (value: string | null, options: { label: string; value: string }[]) => {
+		if (!value) return null;
+		return options.find((o) => o.value === value)?.label;
+	};
+
+	const statusOptions = [
+		{ label: 'New', value: 'new' },
+		{ label: 'In Progress', value: 'in_progress' },
+		{ label: 'Resolved', value: 'resolved' },
+		{ label: 'Closed', value: 'closed' }
+	];
+
+	const severityOptions = [
+		{ label: 'Low', value: 'low' },
+		{ label: 'Medium', value: 'medium' },
+		{ label: 'High', value: 'high' },
+		{ label: 'Critical', value: 'critical' }
+	];
+
 	async function handleStatusChange(issue: Issue, newStatus: string) {
 		await apiFetch(`/issues/${issue.id}`, {
 			method: 'PATCH',
 			body: JSON.stringify({ status: newStatus })
+		});
+		onUpdated();
+	}
+
+	async function handleSeverityChange(issue: Issue, newSeverity: string) {
+		await apiFetch(`/issues/${issue.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({ severity: newSeverity })
 		});
 		onUpdated();
 	}
@@ -61,13 +88,43 @@
 			{#each issues as issue (issue.id)}
 				<Table.Row>
 					<Table.Cell>{issue.title}</Table.Cell>
-					<Table.Cell>{issue.status}</Table.Cell>
-					<Table.Cell>{issue.severity}</Table.Cell>
+					<Table.Cell>
+						<Select.Root
+							type="single"
+							bind:value={issue.status}
+							onValueChange={(newStatus) => handleStatusChange(issue, newStatus)}
+						>
+							<Select.Trigger>
+								{getLabel(issue.status, statusOptions)}
+							</Select.Trigger>
+							<Select.Content>
+								{#each statusOptions as opt}
+									<Select.Item value={opt.value}>{opt.label}</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+					</Table.Cell>
+					<Table.Cell
+						><Select.Root
+							type="single"
+							bind:value={issue.severity}
+							onValueChange={(newSeverity) => handleSeverityChange(issue, newSeverity)}
+						>
+							<Select.Trigger>
+								{getLabel(issue.severity, severityOptions)}
+							</Select.Trigger>
+							<Select.Content>
+								{#each severityOptions as opt}
+									<Select.Item value={opt.value}>{opt.label}</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+					</Table.Cell>
 					<Table.Cell>{new Date(issue.created_at).toLocaleDateString()}</Table.Cell>
 					<Table.Cell>
 						<div class="flex gap-2">
 							<!-- <pre>{issue.created_by}//{currentUserId}</pre> -->
-							<!-- <EditIssueDialog {issue} {onUpdated} /> -->
+							<EditIssueDialog {issue} {onUpdated} />
 							{#if issue.created_by == currentUserId}
 								<Button
 									variant="ghost"

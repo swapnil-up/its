@@ -50,7 +50,7 @@
 	</header>
 
 	<main class="space-y-4 px-6 py-6">
-		<div class="flex items-center justify-between">
+		<div class="flex items-center justify-between gap-3">
 			<IssueFiltersComponent bind:filters />
 			<CreateIssueDialog onCreated={fetchIssue} />
 		</div>
