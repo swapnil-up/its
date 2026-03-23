@@ -4,8 +4,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit(), devtoolsJson()],
+	plugins: [tailwindcss(), sveltekit()],
 	ssr: {
 		noExternal: ['bits-ui']
-	}
+	},
+	server: {
+        // inspector can communicate through Docker
+        fs: {
+            allow: ['..']
+        }
+    }
 });
