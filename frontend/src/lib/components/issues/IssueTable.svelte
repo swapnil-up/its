@@ -6,49 +6,100 @@
 	import EditIssueDialog from './EditIssueDialog.svelte';
 	import { apiFetch } from '$lib/api';
 	import type { Issue } from '$lib/types';
+
 	let {
 		issues,
 		loading,
 		currentUserId,
+		onUpdated,
+		onDeleted
 	}: {
 		issues: Issue[];
 		loading: boolean;
 		currentUserId: string;
+		onUpdated: () => void;
+		onDeleted: () => void;
 	} = $props();
 
-    async function handleStatusChange(issue:Issue, newStatus: string) {
-        await apiFetch('/issues/${issue.id}', {
-            method: 'PATCH', 
-            body: JSON.stringify({status: newStatus})
-        })
-    }
+	let deleteItem = $state<Issue | null>(null);
+	let deleting = $state(false);
+
+	async function handleStatusChange(issue: Issue, newStatus: string) {
+		await apiFetch(`/issues/${issue.id}`, {
+			method: 'PATCH',
+			body: JSON.stringify({ status: newStatus })
+		});
+		onUpdated();
+	}
+
+	async function confirmDelete() {
+		if (!deleteItem) return;
+		deleting = true;
+		await apiFetch(`/issues/${deleteItem.id}`, { method: 'DELETE' });
+		deleting = false;
+		deleteItem = null;
+		onDeleted();
+	}
 </script>
 
 {#if loading}
-<div class="text-center py-12">Loading issues...</div>
-{:else if issues.length===0}
-<div class="text-center py-12">No issues found.</div>
+	<div class="py-12 text-center">Loading issues...</div>
+{:else if issues.length === 0}
+	<div class="py-12 text-center">No issues found.</div>
 {:else}
-<Table.Root>
-    <Table.Header>
-        <Table.Row>
-            <Table.Head>Title</Table.Head>
-            <Table.Head>Status</Table.Head>
-            <Table.Head>Severity</Table.Head>
-            <Table.Head>Created</Table.Head>
-            <Table.Head>Actions</Table.Head>
-        </Table.Row>
-    </Table.Header>
-    <Table.Body>
-        {#each issues as issue (issue.id)}
-        <Table.Row>
-            <Table.Cell>{issue.title}</Table.Cell>
-            <Table.Cell>{issue.status}</Table.Cell>
-            <Table.Cell>{issue.severity}</Table.Cell>
-            <Table.Cell>{new Date(issue.created_at).toLocaleDateString()}</Table.Cell>
-            <Table.Cell>Edit/ Delete</Table.Cell>
-        </Table.Row>
-        {/each}
-    </Table.Body>
-</Table.Root>
+	<Table.Root>
+		<Table.Header>
+			<Table.Row>
+				<Table.Head>Title</Table.Head>
+				<Table.Head>Status</Table.Head>
+				<Table.Head>Severity</Table.Head>
+				<Table.Head>Created</Table.Head>
+				<Table.Head>Actions</Table.Head>
+			</Table.Row>
+		</Table.Header>
+		<Table.Body>
+			{#each issues as issue (issue.id)}
+				<Table.Row>
+					<Table.Cell>{issue.title}</Table.Cell>
+					<Table.Cell>{issue.status}</Table.Cell>
+					<Table.Cell>{issue.severity}</Table.Cell>
+					<Table.Cell>{new Date(issue.created_at).toLocaleDateString()}</Table.Cell>
+					<Table.Cell>
+						<div class="flex gap-2">
+							<!-- <pre>{issue.created_by}//{currentUserId}</pre> -->
+							<!-- <EditIssueDialog {issue} {onUpdated} /> -->
+							{#if issue.created_by == currentUserId}
+								<Button
+									variant="ghost"
+									size="sm"
+									class="text-destructive hover:text-destructive"
+									onclick={() => (deleteItem = issue)}>Delete</Button
+								>
+							{/if}
+						</div>
+					</Table.Cell>
+				</Table.Row>
+			{/each}
+		</Table.Body>
+	</Table.Root>
 {/if}
+
+<Dialog.Root
+	open={deleteItem != null}
+	onOpenChage={(o) => {
+		if (!o) deleteItem = null;
+	}}
+>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Are you sure you want to delete issue?</Dialog.Title>
+			<Dialog.Description>"{deleteItem?.title}" will be deleted permanently.</Dialog.Description>
+		</Dialog.Header>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (deleteItem = null)}>Cancel</Button>
+			<Button variant="destructive" disabled={deleting} onclick={confirmDelete}
+				>{deleting ? 'Deleting...' : 'Delete'}</Button
+			>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

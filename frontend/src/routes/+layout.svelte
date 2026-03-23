@@ -8,9 +8,9 @@
     let { children } = $props();
 
     const PUBLIC_ROUTES = ['/login', '/register'];
+    const isPublic = PUBLIC_ROUTES.includes($page.url.pathname);
 
     $effect(() => {
-        const isPublic = PUBLIC_ROUTES.includes($page.url.pathname);
         
         if (!authStore.isAuthenticated && !isPublic) {
             goto('/login');
@@ -19,4 +19,6 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+{#if (authStore.isAuthenticated || isPublic)}
 {@render children()}
+{/if}

@@ -38,7 +38,7 @@
 					Authorization: `Bearer ${access_token}`
 				}
 			});
-			const { user_data } = await user.json();
+			const user_data = await user.json();
 			authStore.setAuth(access_token, user_data);
 			goto('/');
 		} catch {
