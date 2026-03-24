@@ -28,11 +28,7 @@
 </script>
 
 <div class="flex flex-1 items-center gap-3">
-	<pre class="fixed right-0 bottom-0 z-50 bg-black/80 p-4 text-xs text-green-400">{JSON.stringify(
-			filters,
-			null,
-			2
-		)}</pre>
+	<!-- <pre class="fixed right-0 bottom-0 z-50 bg-black/80 p-4 text-xs text-green-400">{JSON.stringify(filters,null,2)}</pre> -->
 
 	<Input placeholder="Search by title..." bind:value={filters.search} />
 

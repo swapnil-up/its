@@ -4,21 +4,38 @@
     import { authStore } from '$lib/stores/auth.svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	import { apiFetch } from '$lib/api';
 
     let { children } = $props();
+    let verifying = $state(authStore.isAuthenticated);
 
     const PUBLIC_ROUTES = ['/login', '/register'];
-    const isPublic = PUBLIC_ROUTES.includes($page.url.pathname);
+    const isPublic = $derived(PUBLIC_ROUTES.includes($page.url.pathname));
 
     $effect(() => {
-        
         if (!authStore.isAuthenticated && !isPublic) {
-            goto('/login');
+            goto('/login', {replaceState: true});
+        }
+    });
+
+    onMount(async () => {
+        if (authStore.isAuthenticated) {
+            try {
+                const res = await apiFetch('/me');
+                if (!res.ok) authStore.clearAuth(); 
+            } finally {
+                verifying = false; 
+            }
         }
     });
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
-{#if (authStore.isAuthenticated || isPublic)}
+{#if (authStore.isAuthenticated || isPublic) && !verifying}
 {@render children()}
+{:else}
+    <div class="flex h-screen items-center justify-center">
+        <p class="text-sm text-muted-foreground animate-pulse">Loading...</p>
+    </div>
 {/if}

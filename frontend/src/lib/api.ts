@@ -1,6 +1,7 @@
 import { authStore } from './stores/auth.svelte'
+import { PUBLIC_API_URL } from '$env/static/public'
 
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = PUBLIC_API_URL
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
     const accessToken = authStore.accessToken

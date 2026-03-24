@@ -12,7 +12,7 @@ def get_current_user(
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme), 
         db: Session = Depends(get_db)
 ) -> User:
-    credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could be validate credentials", headers={"WWW-Authenticate": "Bearer"},)
+    credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"},)
     try:
         token= credentials.credentials
         payload=decode_token(token)

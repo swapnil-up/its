@@ -8,8 +8,18 @@ from .routers import auth, issues, users
 from .core.dependencies import get_current_user
 from .models import User
 
+from contextlib import asynccontextmanager
+from alembic.config import Config
+from alembic import command
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 def health():

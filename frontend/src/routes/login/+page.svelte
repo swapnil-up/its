@@ -103,7 +103,7 @@
 			</Button>
 			<p class="text-center text-sm text-muted-foreground">
 				Don't have an account yet?
-				<a href="/login" class="underline">Register</a>
+				<a href="/register" class="underline">Register</a>
 			</p>
 		</Card.Footer>
 	</Card.Root>
