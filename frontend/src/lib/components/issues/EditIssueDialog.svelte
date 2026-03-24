@@ -7,6 +7,8 @@
 	import * as Select from '$lib/components/ui/select';
 	import { apiFetch } from '$lib/api';
 	import type { Issue, User } from '$lib/types';
+	import { Pencil } from 'lucide-svelte'
+
 
 	let { onUpdated, issue, users }: { onUpdated: () => void; issue: Issue; users: User[] } =
 		$props();
@@ -61,7 +63,7 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger>
-		<Button variant="ghost" size="sm">Edit</Button>
+		<Button variant="ghost" size="sm"><Pencil class="h-4 w-4" /></Button>
 	</Dialog.Trigger>
 	<Dialog.Content>
 		<Dialog.Header

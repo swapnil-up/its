@@ -6,6 +6,7 @@
     import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { apiFetch } from '$lib/api';
+    import {themeStore} from '$lib/stores/theme.svelte'
 
     let { children } = $props();
     let verifying = $state(authStore.isAuthenticated);
@@ -20,6 +21,7 @@
     });
 
     onMount(async () => {
+        themeStore.init()
         if (authStore.isAuthenticated) {
             try {
                 const res = await apiFetch('/me');

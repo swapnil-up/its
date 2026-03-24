@@ -5,6 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import EditIssueDialog from './EditIssueDialog.svelte';
 	import { apiFetch } from '$lib/api';
+	import { Trash2 } from 'lucide-svelte'
 	import type { Issue, User } from '$lib/types';
 
 	let {
@@ -140,7 +141,7 @@
 									variant="ghost"
 									size="sm"
 									class="text-destructive hover:text-destructive"
-									onclick={() => (deleteItem = issue)}>Delete</Button
+									onclick={() => (deleteItem = issue)}><Trash2 class="h-4 w-4" /></Button
 								>
 							{/if}
 						</div>

@@ -5,3 +5,4 @@ node_modules/
 .svelte-kit/
 .venv
 *.egg-info/
+.ruff_cache

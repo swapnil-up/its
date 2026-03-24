@@ -6,6 +6,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Select from '$lib/components/ui/select';
 	import { apiFetch } from '$lib/api';
+	import { Plus } from 'lucide-svelte'
 
 	let { onCreated }: { onCreated: () => void } = $props();
 
@@ -53,7 +54,7 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger>
-		<Button>New Issue</Button>
+		<Button><Plus class="h-4 w-4 mr-2" /> New Issue</Button>
 	</Dialog.Trigger>
 	<Dialog.Content>
 		<Dialog.Header><Dialog.Title>Create Issue</Dialog.Title></Dialog.Header>
