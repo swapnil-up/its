@@ -92,7 +92,7 @@
 </script>
 
 <div class="min-h-screen bg-background">
-	<header class="flex items-center justify-between border-b px-6 py-4">
+	<header class="flex items-center justify-between border-b px-6 py-4 mb-4">
 		<h1 class="flex items-center gap-2 text-xl font-semibold">
 			<Bug class="h-5 w-5" /> Issue Tracker
 		</h1>
@@ -117,7 +117,7 @@
 	<main class="space-y-4 px-6 py-6">
 		<div class="flex items-center justify-between gap-3">
 			<IssueFiltersComponent bind:filters />
-			<CreateIssueDialog onCreated={fetchIssue} />
+			<CreateIssueDialog onCreated={fetchIssue} {users} />
 		</div>
 
 		<IssueTable

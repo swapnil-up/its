@@ -21,16 +21,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-@app.get("/health")
+@app.get("/health/")
 def health():
     return {"status": "ok"}
 
-@app.get("/db-health")
+@app.get("/db-health/")
 def db_health(db:Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"database": "ok"}
 
-@app.get("/me")
+@app.get("/me/")
 def me(current_user: User = Depends(get_current_user)):
     return {"email": current_user.email, "id": str(current_user.id), "full_name": current_user.full_name}
 

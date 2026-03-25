@@ -15,7 +15,7 @@ const getStoredAuth = () => {
 const initial = getStoredAuth();
 
 let accessToken = $state<string | null>(initial?.token ?? null);
-let user = $state<User | null>(initial?.user ?? null);
+let user = $state<User | null>(null);
 
 export const authStore = {
 	get accessToken() {
@@ -27,10 +27,12 @@ export const authStore = {
 	get isAuthenticated() {
 		return accessToken !== null;
 	},
-	setAuth(token: string, userData: User) {
+	setAuth(token: string) {
 		accessToken = token;
+		localStorage.setItem(STORAGE_KEY, JSON.stringify({ token }));
+	},
+	setUserData(userData: User) {
 		user = userData;
-		localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user: userData }));
 	},
 	clearAuth() {
 		accessToken = null;

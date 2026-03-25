@@ -26,6 +26,11 @@
             try {
                 const res = await apiFetch('/me');
                 if (!res.ok) authStore.clearAuth(); 
+                else{
+                    const user_data = await res.json();
+                    authStore.setUserData(user_data);
+                } 
+                    
             } finally {
                 verifying = false; 
             }

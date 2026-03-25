@@ -8,10 +8,10 @@ export interface Issue {
     description: string
     severity: Severity
     status: Status
-    assigned_to: string | null
-    created_by: string
     created_at: string
     updated_at: string
+    creator: User
+    assignee: User | null
 }
 
 export interface IssueFilters{

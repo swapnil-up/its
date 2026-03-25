@@ -32,10 +32,6 @@
 		return options.find((o) => o.value === value)?.label;
 	};
 
-	const getUserName = (id: string) => {
-		return users.find((u) => u.id === id)?.full_name ?? 'Unknown';
-	};
-
 	const statusOptions = [
 		{ label: 'New', value: 'new' },
 		{ label: 'In Progress', value: 'in_progress' },
@@ -81,14 +77,15 @@
 {:else if issues.length === 0}
 	<div class="py-12 text-center">No issues found.</div>
 {:else}
-	<Table.Root>
+	<Table.Root class="table-fixed w-full">
 		<Table.Header>
 			<Table.Row>
 				<Table.Head>ID</Table.Head>
-				<Table.Head>Title</Table.Head>
+				<Table.Head class="w-1/3">Title</Table.Head>
 				<Table.Head>Status</Table.Head>
 				<Table.Head>Severity</Table.Head>
 				<Table.Head>Created By</Table.Head>
+				<Table.Head>Assigned To</Table.Head>
 				<Table.Head>Created At</Table.Head>
 				<Table.Head>Actions</Table.Head>
 			</Table.Row>
@@ -97,7 +94,7 @@
 			{#each issues as issue (issue.id)}
 				<Table.Row>
 					<Table.Cell>{issue.id.slice(0, 8)}</Table.Cell>
-					<Table.Cell>{issue.title}</Table.Cell>
+					<Table.Cell class="truncate">{issue.title}</Table.Cell>
 					<Table.Cell>
 						<Select.Root
 							type="single"
@@ -130,13 +127,14 @@
 							</Select.Content>
 						</Select.Root>
 					</Table.Cell>
-					<Table.Cell>{getUserName(issue.created_by)}</Table.Cell>
+					<Table.Cell>{issue.creator.full_name}</Table.Cell>
+					<Table.Cell>{issue.assignee?.full_name ?? "Unassigned"}</Table.Cell>
 					<Table.Cell>{new Date(issue.created_at).toLocaleDateString()}</Table.Cell>
 					<Table.Cell>
 						<div class="flex gap-2">
-							<!-- <pre>{issue.created_by}//{currentUserId}</pre> -->
+							<!-- <pre>{issue.creator.id}//{currentUserId}</pre> -->
 							<EditIssueDialog {issue} {users} {onUpdated} />
-							{#if issue.created_by == currentUserId}
+							{#if issue.creator.id == currentUserId}
 								<Button
 									variant="ghost"
 									size="sm"
@@ -161,7 +159,7 @@
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>Are you sure you want to delete issue?</Dialog.Title>
-			<Dialog.Description>"{deleteItem?.title}" will be deleted permanently.</Dialog.Description>
+			<Dialog.Description class="break-words">"{deleteItem?.title}" will be deleted permanently.</Dialog.Description>
 		</Dialog.Header>
 		<Dialog.Footer>
 			<Button variant="outline" onclick={() => (deleteItem = null)}>Cancel</Button>

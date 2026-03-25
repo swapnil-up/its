@@ -13,7 +13,6 @@
   } = $props()
 </script>
 
-{#if totalPages > 1}
   <div class="flex items-center justify-between px-1">
     <p class="text-sm text-muted-foreground">
       Page {currentPage} of {totalPages}
@@ -48,4 +47,3 @@
       </Button>
     </div>
   </div>
-{/if}

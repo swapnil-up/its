@@ -7,8 +7,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import { apiFetch } from '$lib/api';
 	import type { Issue, User } from '$lib/types';
-	import { Pencil } from 'lucide-svelte'
-
+	import { Pencil } from 'lucide-svelte';
 
 	let { onUpdated, issue, users }: { onUpdated: () => void; issue: Issue; users: User[] } =
 		$props();
@@ -18,25 +17,45 @@
 	let severity = $state('low');
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	let assignee = $state<string>(issue.assigned_to ?? '');
+	let assigneeId = $state<string>(issue.assignee?.id ?? '');
 
 	let isValid = $derived(description.length > 0);
-	let assigneeName = $derived(users.find((u) => u.id === assignee)?.full_name ?? 'Unassigned');
+	let selectedUser = $derived(users.find((u) => u.id === assigneeId));
 
 	$effect(() => {
 		if (open) {
-			description = issue.description;
-			severity = issue.severity;
-			assignee = issue.assigned_to ?? '';
+			syncFreshData();
 		}
 	});
+
+	async function syncFreshData() {
+		const [issueRes, usersRes] = await Promise.all([
+			apiFetch(`/issues/${issue.id}`),
+			apiFetch('/users')
+		]);
+
+		if (issueRes.ok) {
+			const freshIssue = await issueRes.json();
+			description = freshIssue.description;
+			severity = freshIssue.severity;
+			assigneeId = freshIssue.assignee?.id ?? '';
+		}
+
+		if (usersRes.ok) {
+			users = await usersRes.json();
+		}
+	}
 
 	async function handleUpdate() {
 		loading = true;
 		error = null;
 		const res = await apiFetch(`/issues/${issue.id}`, {
 			method: 'PATCH',
-			body: JSON.stringify({ description, severity, assigned_to: assignee || null })
+			body: JSON.stringify({
+				description,
+				severity,
+				assigned_to: assigneeId === '' ? null : assigneeId
+			})
 		});
 		if (res.ok) {
 			open = false;
@@ -89,9 +108,9 @@
 			</Select.Root>
 
 			<Label for="assigned">Assigned To</Label>
-			<Select.Root type="single" bind:value={assignee}>
+			<Select.Root type="single" bind:value={assigneeId}>
 				<Select.Trigger>
-					{assigneeName}
+					{selectedUser?.full_name ?? 'Unassigned'}
 				</Select.Trigger>
 				<Select.Content>
 					<Select.Item value="">Unassigned</Select.Item>

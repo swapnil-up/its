@@ -49,8 +49,8 @@ class IssueResponse(BaseModel):
     description: str
     severity: str
     status: str
-    assigned_to: Optional[UUID] = None
-    created_by: UUID
+    assignee: Optional[UserResponse] = None
+    creator: UserResponse
     created_at: datetime
     updated_at: datetime
 

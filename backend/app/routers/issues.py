@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional
 import uuid
 
@@ -21,7 +21,7 @@ def create_issue(payload: IssueCreate, db:Session=Depends(get_db), current_user:
 
 @router.get("/", response_model=list[IssueResponse])
 def list_issues(status: Optional[StatusEnum]=Query(None), severity: Optional[SeverityEnum]=Query(None),search: Optional[str]=Query(None), db:Session=Depends(get_db), current_user: User=Depends(get_current_user)):
-    issue = db.query(Issue)
+    issue = db.query(Issue).options(joinedload(Issue.creator), joinedload(Issue.assignee))
     if status:
         issue = issue.filter(Issue.status==status)
     if severity:
