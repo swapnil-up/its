@@ -15,7 +15,7 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     if (accessToken) {
         headers['Authorization'] = `Bearer ${accessToken}`
     }
-    const res = await fetch(`${BASE_URL}${path}/`, {
+    const res = await fetch(`${BASE_URL}${path}`, {
         ...options,
         headers,
         credentials: 'include'

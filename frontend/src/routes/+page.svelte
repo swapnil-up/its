@@ -18,54 +18,41 @@
 	let loading = $state(true);
 	let filters = $state<IssueFilters>({ search: '', severity: null, status: null });
 
-	let filteredIssues = $derived(
-		issues.filter((issue) => {
-			if (filters.search && !issue.title.toLowerCase().includes(filters.search.toLowerCase()))
-				return false;
-			if (filters.status && issue.status !== filters.status) return false;
-			if (filters.severity && issue.severity !== filters.severity) return false;
-			return true;
-		})
-	);
-
-	let stats = $derived({
-		total: issues.length,
-		by_status: {
-			new: issues.filter((i) => i.status === 'new').length,
-			in_progress: issues.filter((i) => i.status === 'in_progress').length,
-			resolved: issues.filter((i) => i.status === 'resolved').length,
-			closed: issues.filter((i) => i.status === 'closed').length
-		},
-		by_severity: {
-			low: issues.filter((i) => i.severity === 'low').length,
-			medium: issues.filter((i) => i.severity === 'medium').length,
-			high: issues.filter((i) => i.severity === 'high').length,
-			critical: issues.filter((i) => i.severity === 'critical').length
-		}
-	});
-
 	const PAGE_SIZE = 5;
 	let currentPage = $state(1);
+	let totalPages = $state(0);
+	let totalItems = $state(0);
+
+	let stats = $state({
+		total: 0,
+		by_status: { new: 0, in_progress: 0, resolved: 0, closed: 0 },
+        by_severity: { low: 0, medium: 0, high: 0, critical: 0 }
+	});
+
 	$effect(() => {
 		filters.search;
 		filters.status;
 		filters.severity;
-		currentPage = 1;
+		currentPage;
+		fetchIssue()
 	});
-
-	let totalPages = $derived(Math.ceil(filteredIssues.length/PAGE_SIZE))
-	let paginatedIssues = $derived(
-		filteredIssues.slice(
-			(currentPage -1)*PAGE_SIZE,
-			currentPage*PAGE_SIZE
-		)
-	)
 
 	async function fetchIssue() {
 		loading = true;
-		const res = await apiFetch('/issues');
+		const params = new URLSearchParams({
+            page: currentPage.toString(),
+            size: PAGE_SIZE.toString(),
+            ...(filters.search && { search: filters.search }),
+            ...(filters.status && { status: filters.status }),
+            ...(filters.severity && { severity: filters.severity })
+        });
+		const res = await apiFetch(`/issues?${params}`);
 		if (res.ok) {
-			issues = await res.json();
+			const data = await res.json();
+			issues = data.items;
+			totalPages = data.pages
+			totalItems = data.total
+			stats = data.stats
 		}
 		loading = false;
 	}
@@ -92,7 +79,7 @@
 </script>
 
 <div class="min-h-screen bg-background">
-	<header class="flex items-center justify-between border-b px-6 py-4 mb-4">
+	<header class="mb-4 flex items-center justify-between border-b px-6 py-4">
 		<h1 class="flex items-center gap-2 text-xl font-semibold">
 			<Bug class="h-5 w-5" /> Issue Tracker
 		</h1>
@@ -121,13 +108,13 @@
 		</div>
 
 		<IssueTable
-			issues={paginatedIssues}
+			issues={issues}
 			{users}
 			{loading}
 			currentUserId={authStore.user?.id ?? ''}
 			onDeleted={fetchIssue}
 			onUpdated={fetchIssue}
 		/>
-		<Pagination {currentPage} {totalPages} onPageChange={(p)=>currentPage = p}/>
+		<Pagination {currentPage} {totalPages} onPageChange={(p) => (currentPage = p)} />
 	</main>
 </div>

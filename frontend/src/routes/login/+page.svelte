@@ -8,6 +8,7 @@
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { apiFetch } from '$lib/api';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import { CheckCircle2 } from "lucide-svelte";
 
 	let email = $state('');
 	let password = $state('');
@@ -64,21 +65,7 @@
 						class="border-green-500 bg-green-50/50 text-green-700 dark:bg-green-950/20 dark:text-green-400"
 					>
 						<div class="flex items-center gap-2">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								class="lucide lucide-check-circle-2"
-								><path
-									d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
-								/><path d="m9 12 2 2 4-4" /></svg
-							>
+							<CheckCircle2 class="h-4 w-4" />
 							<AlertDescription>Registration successful! Please log in.</AlertDescription>
 						</div>
 					</Alert>

@@ -29,7 +29,7 @@
       })
       if (!res.ok) {
         const data = await res.json()
-        error = data.detail ?? 'Registration failed'
+        error = data.detail[0].msg ?? 'Registration failed'
         return
       }
       goto('/login?registered=true')

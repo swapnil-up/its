@@ -9,7 +9,7 @@
 	import { Plus } from 'lucide-svelte'
 	import type { User } from '$lib/types';
 
-	let { onCreated, users }: { onCreated: () => void; users: User[] } = $props();
+	let { onCreated, users=$bindable() }: { onCreated: () => void; users: User[] } = $props();
 
 	let open = $state(false);
 	let title = $state('');
@@ -17,9 +17,9 @@
 	let severity = $state('low');
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	let assigned_to = $state<string>('Unassigned');
+	let assigned_to = $state<string>('');
 
-	let assigneeName = $derived(users.find((u) => u.id === assigned_to)?.full_name);
+	let assigneeName = $derived(users.find((u) => u.id === assigned_to)?.full_name ?? "Unassigned");
 	let isValid = $derived(title.length > 0 && description.length > 0);
 	$effect(()=>{
 		if (!open){
@@ -42,7 +42,7 @@
 		error = null;
 		const res = await apiFetch('/issues', {
 			method: 'POST',
-			body: JSON.stringify({ title, description, severity, assigned_to })
+			body: JSON.stringify({ title, description, severity, assigned_to: assigned_to===""? null:assigned_to })
 		});
 		if (res.ok) {
 			open = false;
@@ -52,7 +52,7 @@
 			onCreated();
 		} else {
 			const data = await res.json();
-			error = data.detail ?? 'Failed to create issue';
+			error = data.detail ? `${data.detail[0].msg} . ${data.detail[0].input}` : 'Failed to create issue';
 		}
 		loading = false;
 	}
@@ -75,8 +75,7 @@
 		severity = 'low';
 		loading = false;
 		error = null;
-		assigned_to="Unassigned"
-		assigneeName="Unassigned"
+		assigned_to=""
 	}
 </script>
 
@@ -116,7 +115,7 @@
 			</Select.Root>
 		</div>
 		{#if error}
-			<p class="text-destructive">{error}</p>
+			<p class="text-destructive break-words">{error}</p>
 		{/if}
 
 		<Dialog.Footer>
