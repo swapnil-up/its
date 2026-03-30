@@ -1,0 +1,24 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "backend for ITS"
+readme = "README.md"
+exclude = ["alembic/versions/*.py"]
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.18.4",
+    "email-validator>=2.3.0",
+    "fastapi>=0.135.2",
+    "passlib[bcrypt]>=1.7.4",
+    "psycopg2-binary>=2.9.11",
+    "python-dotenv>=1.2.2",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.22",
+    "sqlalchemy>=2.0.48",
+    "uvicorn[standard]>=0.42.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.8",
+]
