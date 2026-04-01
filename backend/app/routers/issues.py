@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import Optional
 import uuid
+from ..websocket_manager import manager
 
 from ..database import get_db
 from ..models import Issue
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/issues", tags=["issues"])
 
 
 @router.post("/", response_model=IssueResponse, status_code=201)
-def create_issue(
+async def create_issue(
     payload: IssueCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -30,6 +31,7 @@ def create_issue(
     issue = Issue(**payload.model_dump(), created_by=current_user.id)
     db.add(issue)
     db.commit()
+    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue.id)})
     issue = (
         db.query(Issue)
         .options(joinedload(Issue.creator), joinedload(Issue.assignee))
@@ -102,7 +104,7 @@ def get_issue(
 
 
 @router.patch("/{issue_id}", response_model=IssueResponse)
-def update_issue(
+async def update_issue(
     issue_id: uuid.UUID,
     payload: IssueUpdate,
     db: Session = Depends(get_db),
@@ -117,6 +119,7 @@ def update_issue(
     for field, value in update_data.items():
         setattr(issue, field, value)
     db.commit()
+    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue_id)})
     return (
         db.query(Issue)
         .options(joinedload(Issue.creator), joinedload(Issue.assignee))
@@ -126,7 +129,7 @@ def update_issue(
 
 
 @router.delete("/{issue_id}", status_code=204)
-def delete_issue(
+async def delete_issue(
     issue_id: uuid.UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -143,4 +146,5 @@ def delete_issue(
         )
     db.delete(issue)
     db.commit()
+    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue_id)})
     return None

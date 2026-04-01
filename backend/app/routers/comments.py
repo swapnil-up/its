@@ -6,6 +6,7 @@ from ..database import get_db
 from ..models import Comment, Issue, User
 from ..schemas import CommentCreate, CommentUpdate, CommentResponse, PaginatedComments
 from ..core.dependencies import get_current_user
+from ..websocket_manager import manager
 
 router = APIRouter(prefix="/issues/{issue_id}/comments", tags=["comments"])
 
@@ -26,17 +27,21 @@ def list_comments(issue_id: uuid.UUID, limit: int=Query(20, ge=1, le=100), offse
     }
 
 @router.post("/", response_model = CommentResponse, status_code=201)
-def create_comment(issue_id: uuid.UUID, payload: CommentCreate, db: Session=Depends(get_db), current_user: User=Depends(get_current_user)):
+async def create_comment(issue_id: uuid.UUID, payload: CommentCreate, db: Session=Depends(get_db), current_user: User=Depends(get_current_user)):
     get_issue_or_404(issue_id, db)
     comment = Comment(**payload.model_dump(), author_id=current_user.id, issue_id=issue_id)
     db.add(comment)
     db.commit()
     db.refresh(comment)
+    await manager.broadcast(f"issue:{issue_id}", {
+    "type": "comment_created",
+    "issue_id": str(issue_id)
+})
     return comment
 
 
 @router.patch("/{comment_id}", response_model=CommentResponse)
-def update_comment( issue_id: uuid.UUID, comment_id: uuid.UUID, payload: CommentUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def update_comment( issue_id: uuid.UUID, comment_id: uuid.UUID, payload: CommentUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     comment = db.query(Comment).filter(Comment.id==comment_id).filter(Issue.id==issue_id).first()
     if not comment:
         raise HTTPException(
@@ -47,10 +52,14 @@ def update_comment( issue_id: uuid.UUID, comment_id: uuid.UUID, payload: Comment
         setattr(comment, field, value)
     db.commit()
     db.refresh(comment)
+    await manager.broadcast(f"issue:{issue_id}", {
+    "type": "comment_created",
+    "issue_id": str(issue_id)
+})
     return(db.query(Comment).options(joinedload(Comment.commenter), joinedload(Comment.issue)).filter(Comment.id==comment_id).first())
 
 @router.delete("/{comment_id}", status_code=204)
-def delete_comment( issue_id: uuid.UUID, comment_id: uuid.UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def delete_comment( issue_id: uuid.UUID, comment_id: uuid.UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     comment = db.query(Comment).filter(Comment.id==comment_id).first()
     issue = db.query(Issue).filter(Issue.id==issue_id).first()
     if not comment:
@@ -64,4 +73,8 @@ def delete_comment( issue_id: uuid.UUID, comment_id: uuid.UUID, db: Session = De
         )
     db.delete(comment)
     db.commit()
+    await manager.broadcast(f"issue:{issue_id}", {
+    "type": "comment_created",
+    "issue_id": str(issue_id)
+})
     return None

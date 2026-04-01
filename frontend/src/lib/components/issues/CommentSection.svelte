@@ -7,6 +7,7 @@
   import { Textarea } from '$lib/components/ui/textarea'
   import { Pencil, Trash2 } from 'lucide-svelte'
   import { Separator } from '$lib/components/ui/separator'
+  import {wsClient} from '$lib/websocket.svelte'
 
   let {
     issueId,
@@ -79,7 +80,17 @@
     editContent = comment.content
   }
 
-  onMount(() => fetchComments(true))
+  onMount(() => {
+    fetchComments(true)
+    
+    wsClient.connect(`issue:${issueId}`)
+    const cleanup = wsClient.onMessage((msg)=>{
+      if (['comment_created', 'comment_deleted'].includes(msg.type)){
+        fetchComments(true)
+        onCountChanged()
+      }
+    })
+    })
 </script>
 
 <div class="space-y-4">

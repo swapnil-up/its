@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { apiFetch } from '$lib/api';
 	import type { Issue, IssueFilters, User } from '$lib/types';
 	import IssueFiltersComponent from '$lib/components/issues/IssueFilters.svelte';
@@ -12,6 +12,7 @@
 	import { Bug, LogOut, Sun, Moon } from 'lucide-svelte';
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import Pagination from '$lib/components/issues/Pagination.svelte';
+	import {wsClient} from '$lib/websocket.svelte'
 
 	let issues = $state<Issue[]>([]);
 	let users = $state<User[]>([]);
@@ -22,6 +23,7 @@
 	let currentPage = $state(1);
 	let totalPages = $state(0);
 	let totalItems = $state(0);
+	let cleanupWS: (()=>void)|null = null
 
 	let stats = $state({
 		total: 0,
@@ -75,7 +77,19 @@
 	onMount(() => {
 		fetchIssue();
 		fetchUsers();
+
+		wsClient.connect('dashboard')
+		cleanupWS = wsClient.onMessage((msg)=>{
+			if (['issue_created', 'issue_updated', 'issue_deleted'].includes(msg.type)){
+				fetchIssue()
+			}
+		})
 	});
+
+	onDestroy(()=>{
+		cleanupWS?.()
+		wsClient.disconnect()
+	})
 </script>
 
 <div class="min-h-screen bg-background">
