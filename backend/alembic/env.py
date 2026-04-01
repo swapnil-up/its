@@ -5,7 +5,9 @@ from sqlalchemy import pool
 
 from alembic import context
 from app.database import Base
+from app.models import User, Issue, Comment
 import os
+from dotenv import load_dotenv
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -59,6 +61,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    load_dotenv()
     url = os.getenv("DATABASE_URL")
     section = config.get_section(config.config_ini_section, {})
     if url:

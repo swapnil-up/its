@@ -62,6 +62,7 @@ class IssueResponse(BaseModel):
     creator: UserResponse
     created_at: datetime
     updated_at: datetime
+    comment_count: int=0
 
 
 class Token(BaseModel):
@@ -87,3 +88,26 @@ class PaginatedResponse(BaseModel, Generic[T]):
     size: int
     pages: int
     stats: IssueStats
+
+class CommentCreate(BaseModel):
+    content: str
+
+class CommentUpdate(BaseModel):
+    content: str
+
+class CommentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    content: str
+    issue_id: UUID
+    author_id: UUID
+    commenter: UserResponse
+    created_at: datetime
+    updated_at: datetime
+
+class PaginatedComments(BaseModel):
+    items: list[CommentResponse]
+    total: int
+    limit: int
+    offset: int

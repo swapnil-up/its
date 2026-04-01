@@ -5,8 +5,9 @@
 	import { Button } from '$lib/components/ui/button';
 	import EditIssueDialog from './EditIssueDialog.svelte';
 	import { apiFetch } from '$lib/api';
-	import { Trash2 } from 'lucide-svelte'
+	import { Trash2 } from 'lucide-svelte';
 	import type { Issue, User } from '$lib/types';
+	import CommentSection from './CommentSection.svelte';
 
 	let {
 		issues = $bindable(),
@@ -26,6 +27,7 @@
 
 	let deleteItem = $state<Issue | null>(null);
 	let deleting = $state(false);
+	let selectedIssue = $state<Issue | null>(null);
 
 	const getLabel = (value: string | null, options: { label: string; value: string }[]) => {
 		if (!value) return null;
@@ -94,7 +96,12 @@
 			{#each issues as issue (issue.id)}
 				<Table.Row>
 					<Table.Cell>{issue.id.slice(0, 8)}</Table.Cell>
-					<Table.Cell class="truncate">{issue.title}</Table.Cell>
+					<Table.Cell
+						class="font-medium cursor-pointer hover:underline"
+						onclick={() => (selectedIssue = issue)}
+					>
+						{issue.title}
+					</Table.Cell>
 					<Table.Cell>
 						<Select.Root
 							type="single"
@@ -128,7 +135,7 @@
 						</Select.Root>
 					</Table.Cell>
 					<Table.Cell>{issue.creator.full_name}</Table.Cell>
-					<Table.Cell>{issue.assignee?.full_name ?? "Unassigned"}</Table.Cell>
+					<Table.Cell>{issue.assignee?.full_name ?? 'Unassigned'}</Table.Cell>
 					<Table.Cell>{new Date(issue.created_at).toLocaleDateString()}</Table.Cell>
 					<Table.Cell>
 						<div class="flex gap-2">
@@ -159,7 +166,9 @@
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>Are you sure you want to delete issue?</Dialog.Title>
-			<Dialog.Description class="break-words">"{deleteItem?.title}" will be deleted permanently.</Dialog.Description>
+			<Dialog.Description class="break-words"
+				>"{deleteItem?.title}" will be deleted permanently.</Dialog.Description
+			>
 		</Dialog.Header>
 		<Dialog.Footer>
 			<Button variant="outline" onclick={() => (deleteItem = null)}>Cancel</Button>
@@ -168,4 +177,24 @@
 			>
 		</Dialog.Footer>
 	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root
+  open={selectedIssue !== null}
+  onOpenChange={(o) => { if (!o) selectedIssue = null }}
+>
+  <Dialog.Content class="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+    <Dialog.Header>
+      <Dialog.Title>{selectedIssue?.title}</Dialog.Title>
+      <Dialog.Description class="text-sm">{selectedIssue?.description}</Dialog.Description>
+    </Dialog.Header>
+
+    {#if selectedIssue}
+      <CommentSection
+        issueId={selectedIssue.id}
+        issueCreatorId={selectedIssue.creator_id}
+        onCountChanged={onUpdated}
+      />
+    {/if}
+  </Dialog.Content>
 </Dialog.Root>
