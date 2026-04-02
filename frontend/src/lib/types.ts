@@ -12,6 +12,7 @@ export interface Issue {
     updated_at: string
     creator: User
     assignee: User | null
+    attachments?: [Attachment]
 }
 
 export interface IssueFilters{
@@ -24,4 +25,15 @@ export interface User{
     id: string
     email: string
     full_name: string
+}
+
+export interface Attachment{
+    id: string
+    issue_id: string
+    filename: string
+    content_type: string
+    size: number
+    uploader: User
+    created_at: string
+    url: string
 }

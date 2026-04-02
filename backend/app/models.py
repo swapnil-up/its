@@ -51,7 +51,12 @@ class Issue(Base):
 
     creator: Mapped["User"] = relationship("User", foreign_keys=[created_by])
     assignee: Mapped["User"] = relationship("User", foreign_keys=[assigned_to])
-    comments: Mapped[list["Comment"]]=relationship("Comment",back_populates="issue", cascade="all, delete-orphan")
+    comments: Mapped[list["Comment"]] = relationship(
+        "Comment", back_populates="issue", cascade="all, delete-orphan"
+    )
+    attachments: Mapped[list["Attachment"]] = relationship(
+        "Attachment", back_populates="issue", cascade="all, delete-orphan"
+    )
 
     @property
     def comment_count(self) -> int:
@@ -62,11 +67,32 @@ class Comment(Base):
     __tablename__ = "comments"
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    issue_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("issues.id", ondelete="CASCADE"), nullable=False)
-    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id")) 
-    
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    issue_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("issues.id", ondelete="CASCADE"), nullable=False
+    )
+    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
 
-    issue: Mapped["Issue"]=relationship("Issue", foreign_keys=[issue_id])
-    commenter: Mapped["User"]=relationship("User", foreign_keys=[author_id])
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(), onupdate=func.now()
+    )
+
+    issue: Mapped["Issue"] = relationship("Issue", foreign_keys=[issue_id])
+    commenter: Mapped["User"] = relationship("User", foreign_keys=[author_id])
+
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    issue_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("issues.id", ondelete="CASCADE")
+    )
+    uploader_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    filename: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(100))
+    object_key: Mapped[str] = mapped_column(String(500))
+    size: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    uploader: Mapped["User"] = relationship("User")
+    issue: Mapped["Issue"] = relationship("Issue", back_populates="attachments")

@@ -51,6 +51,19 @@ class IssueUpdate(BaseModel):
     assigned_to: Optional[UUID] = None
 
 
+class AttachmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    issue_id: UUID
+    filename: str
+    content_type: str
+    size: int
+    uploader: UserResponse
+    created_at: datetime
+    url: str = ""
+    object_key: str
+
+
 class IssueResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
@@ -62,7 +75,8 @@ class IssueResponse(BaseModel):
     creator: UserResponse
     created_at: datetime
     updated_at: datetime
-    comment_count: int=0
+    attachments: list[AttachmentResponse] = []
+    comment_count: int = 0
 
 
 class Token(BaseModel):
@@ -89,11 +103,14 @@ class PaginatedResponse(BaseModel, Generic[T]):
     pages: int
     stats: IssueStats
 
+
 class CommentCreate(BaseModel):
     content: str
 
+
 class CommentUpdate(BaseModel):
     content: str
+
 
 class CommentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -105,6 +122,7 @@ class CommentResponse(BaseModel):
     commenter: UserResponse
     created_at: datetime
     updated_at: datetime
+
 
 class PaginatedComments(BaseModel):
     items: list[CommentResponse]

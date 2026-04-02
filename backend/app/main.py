@@ -3,10 +3,11 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from .database import get_db
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, issues, users, comments, ws
+from .routers import auth, issues, users, comments, ws, attachments
 
 from .core.dependencies import get_current_user
 from .models import User
+from .storage import ensure_bucker_exists
 
 from contextlib import asynccontextmanager
 from alembic.config import Config
@@ -17,6 +18,7 @@ from alembic import command
 async def lifespan(app: FastAPI):
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
+    ensure_bucker_exists()
     yield
 
 
@@ -56,3 +58,4 @@ app.include_router(issues.router)
 app.include_router(users.router)
 app.include_router(comments.router)
 app.include_router(ws.router)
+app.include_router(attachments.router)

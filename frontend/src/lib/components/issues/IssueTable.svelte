@@ -8,6 +8,7 @@
 	import { Trash2 } from 'lucide-svelte';
 	import type { Issue, User } from '$lib/types';
 	import CommentSection from './CommentSection.svelte';
+	import AttachmentSection from './AttachmentSection.svelte';
 
 	let {
 		issues = $bindable(),
@@ -72,6 +73,22 @@
 		deleteItem = null;
 		onDeleted();
 	}
+
+	async function refreshSelectedIssue() {
+		if (!selectedIssue) return;
+		loading = true;
+		try {
+			const response = await apiFetch(`/issues/${selectedIssue.id}`);
+			if (!response.ok) throw new Error('Failed to fetch');
+			const updated = (await response.json()) as Issue;
+			selectedIssue = updated;
+			onUpdated();
+		} catch (e) {
+			console.error('Failed to refresh ', e);
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 {#if loading}
@@ -79,7 +96,7 @@
 {:else if issues.length === 0}
 	<div class="py-12 text-center">No issues found.</div>
 {:else}
-	<Table.Root class="table-fixed w-full">
+	<Table.Root class="w-full table-fixed">
 		<Table.Header>
 			<Table.Row>
 				<Table.Head>ID</Table.Head>
@@ -97,7 +114,7 @@
 				<Table.Row>
 					<Table.Cell>{issue.id.slice(0, 8)}</Table.Cell>
 					<Table.Cell
-						class="font-medium cursor-pointer hover:underline"
+						class="cursor-pointer font-medium hover:underline"
 						onclick={() => (selectedIssue = issue)}
 					>
 						{issue.title}
@@ -180,21 +197,33 @@
 </Dialog.Root>
 
 <Dialog.Root
-  open={selectedIssue !== null}
-  onOpenChange={(o) => { if (!o) selectedIssue = null }}
+	open={selectedIssue !== null}
+	onOpenChange={(o) => {
+		if (!o) selectedIssue = null;
+	}}
 >
-  <Dialog.Content class="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-    <Dialog.Header>
-      <Dialog.Title>{selectedIssue?.title}</Dialog.Title>
-      <Dialog.Description class="text-sm">{selectedIssue?.description}</Dialog.Description>
-    </Dialog.Header>
+	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+		<Dialog.Header>
+			<Dialog.Title>{selectedIssue?.title}</Dialog.Title>
+			<Dialog.Description class="text-sm">{selectedIssue?.description}</Dialog.Description>
+		</Dialog.Header>
 
-    {#if selectedIssue}
-      <CommentSection
-        issueId={selectedIssue.id}
-        issueCreatorId={selectedIssue.creator_id}
-        onCountChanged={onUpdated}
-      />
-    {/if}
-  </Dialog.Content>
+		<div class="flex-1 overflow-y-auto px-1">
+			{#if selectedIssue}
+				<div class="mb-6 rounded-lg border bg-muted/30 p-4">
+					<AttachmentSection
+						issueId={selectedIssue.id}
+						issueCreatorId={selectedIssue.creator.id}
+						attachments={selectedIssue.attachments || []}
+						onChanged={refreshSelectedIssue}
+					/>
+				</div>
+				<CommentSection
+					issueId={selectedIssue.id}
+					issueCreatorId={selectedIssue.creator_id}
+					onCountChanged={onUpdated}
+				/>
+			{/if}
+		</div>
+	</Dialog.Content>
 </Dialog.Root>

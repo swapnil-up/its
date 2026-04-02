@@ -3,10 +3,13 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from typing import Optional
 import uuid
+import traceback
+
+from ..storage import get_presigned_url
 from ..websocket_manager import manager
 
 from ..database import get_db
-from ..models import Issue
+from ..models import Attachment, Issue
 from ..schemas import (
     IssueCreate,
     IssueUpdate,
@@ -31,7 +34,9 @@ async def create_issue(
     issue = Issue(**payload.model_dump(), created_by=current_user.id)
     db.add(issue)
     db.commit()
-    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue.id)})
+    await manager.broadcast(
+        "dashboard", {"type": "issue_created", "issue_id": str(issue.id)}
+    )
     issue = (
         db.query(Issue)
         .options(joinedload(Issue.creator), joinedload(Issue.assignee))
@@ -52,7 +57,9 @@ def list_issues(
     current_user: User = Depends(get_current_user),
 ):
     issue = db.query(Issue).options(
-        joinedload(Issue.creator), joinedload(Issue.assignee)
+        joinedload(Issue.creator),
+        joinedload(Issue.assignee),
+        joinedload(Issue.attachments).joinedload(Attachment.uploader),
     )
     if status:
         issue = issue.filter(Issue.status == status)
@@ -78,9 +85,22 @@ def list_issues(
         .limit(size)
         .all()
     )
+    try:
+        attached_items = []
+        for issue in items:
+            issue_pydantic = IssueResponse.model_validate(issue)
+            for attachment in issue_pydantic.attachments:
+                attachment.url = get_presigned_url(attachment.object_key)
+            attached_items.append(issue_pydantic)
+
+    except Exception as e:
+        print("--- DEBUG ERROR ---")
+        print(traceback.format_exc())  # This will show exactly which field failed
+        raise HTTPException(status_code=500, detail=str(e))
+
     pages = math.ceil(total / size) if total > 0 else 0
     return {
-        "items": items,
+        "items": attached_items,
         "total": total,
         "page": page,
         "size": size,
@@ -100,7 +120,12 @@ def get_issue(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found."
         )
-    return issue
+
+    response_data = IssueResponse.model_validate(issue)
+    for attachment in response_data.attachments:
+        attachment.url = get_presigned_url(attachment.object_key)
+
+    return response_data
 
 
 @router.patch("/{issue_id}", response_model=IssueResponse)
@@ -119,7 +144,9 @@ async def update_issue(
     for field, value in update_data.items():
         setattr(issue, field, value)
     db.commit()
-    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue_id)})
+    await manager.broadcast(
+        "dashboard", {"type": "issue_created", "issue_id": str(issue_id)}
+    )
     return (
         db.query(Issue)
         .options(joinedload(Issue.creator), joinedload(Issue.assignee))
@@ -146,5 +173,7 @@ async def delete_issue(
         )
     db.delete(issue)
     db.commit()
-    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue_id)})
+    await manager.broadcast(
+        "dashboard", {"type": "issue_created", "issue_id": str(issue_id)}
+    )
     return None
