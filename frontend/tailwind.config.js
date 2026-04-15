@@ -1,1 +1,1 @@
-darkMode: 'class'
+darkMode: 'class';

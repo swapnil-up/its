@@ -1,26 +1,24 @@
-import { authStore } from './stores/auth.svelte'
-import { PUBLIC_API_URL } from '$env/static/public'
+import { authStore } from './stores/auth.svelte';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-const BASE_URL = PUBLIC_API_URL
+const BASE_URL = PUBLIC_API_URL;
 
 export async function apiFetch(path: string, options: RequestInit = {}) {
-    const accessToken = authStore.accessToken
+	const accessToken = authStore.accessToken;
 
-    const headers: Record<string, string> = {
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/json',
+		...((options.headers as Record<string, string>) ?? {})
+	};
 
-        'Content-Type': 'application/json',
-        ...(options.headers as Record<string, string> ?? {})
-    }
+	if (accessToken) {
+		headers['Authorization'] = `Bearer ${accessToken}`;
+	}
+	const res = await fetch(`${BASE_URL}${path}`, {
+		...options,
+		headers,
+		credentials: 'include'
+	});
 
-    if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`
-    }
-    const res = await fetch(`${BASE_URL}${path}`, {
-        ...options,
-        headers,
-        credentials: 'include'
-    })
-
-    return res
-
+	return res;
 }

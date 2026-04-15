@@ -1,7 +1,8 @@
+import os
+
 import boto3
 from botocore.client import Config
-import os
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 
 load_dotenv()
 MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER")

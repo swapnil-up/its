@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
-from sqlalchemy.orm import Session, joinedload
 import uuid
 
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session, joinedload
+
+from ..core.dependencies import get_current_user
 from ..database import get_db
 from ..models import Attachment, Issue, User
 from ..schemas import AttachmentResponse
-from ..core.dependencies import get_current_user
-from ..storage import upload_file, delete_file, get_presigned_url
+from ..storage import delete_file, get_presigned_url, upload_file
 from ..websocket_manager import manager
 
 router = APIRouter(prefix="/issues/{issue_id}/attachments", tags=["attachments"])
@@ -71,9 +72,7 @@ async def upload_attachment(
         .first()
     )
 
-    await manager.broadcast(
-        "dashboard", {"type": "issue_updated", "issue_id": str(issue_id)}
-    )
+    await manager.broadcast("dashboard", {"type": "issue_updated", "issue_id": str(issue_id)})
     response = AttachmentResponse.model_validate(attachment)
     response.url = get_presigned_url(object_key)
     return response

@@ -1,26 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
-from typing import Optional
-import uuid
+import math
 import traceback
+import uuid
 
-from ..storage import get_presigned_url
-from ..websocket_manager import manager
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 
+from ..core.dependencies import get_current_user
 from ..database import get_db
-from ..models import Attachment, Issue
+from ..models import Attachment, Issue, User
 from ..schemas import (
     IssueCreate,
-    IssueUpdate,
     IssueResponse,
+    IssueUpdate,
     PaginatedResponse,
     SeverityEnum,
     StatusEnum,
 )
-from ..core.dependencies import get_current_user
-from ..models import User
-import math
+from ..storage import get_presigned_url
+from ..websocket_manager import manager
 
 router = APIRouter(prefix="/issues", tags=["issues"])
 
@@ -34,9 +32,7 @@ async def create_issue(
     issue = Issue(**payload.model_dump(), created_by=current_user.id)
     db.add(issue)
     db.commit()
-    await manager.broadcast(
-        "dashboard", {"type": "issue_created", "issue_id": str(issue.id)}
-    )
+    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue.id)})
     issue = (
         db.query(Issue)
         .options(joinedload(Issue.creator), joinedload(Issue.assignee))
@@ -48,9 +44,9 @@ async def create_issue(
 
 @router.get("/", response_model=PaginatedResponse[IssueResponse])
 def list_issues(
-    status: Optional[StatusEnum] = Query(None),
-    severity: Optional[SeverityEnum] = Query(None),
-    search: Optional[str] = Query(None),
+    status: StatusEnum | None = Query(None),
+    severity: SeverityEnum | None = Query(None),
+    search: str | None = Query(None),
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -68,23 +64,14 @@ def list_issues(
     if search:
         issue = issue.filter(Issue.title.ilike(f"%{search}%"))
     total = issue.count()
-    status_counts = (
-        db.query(Issue.status, func.count(Issue.id)).group_by(Issue.status).all()
-    )
-    severity_counts = (
-        db.query(Issue.severity, func.count(Issue.id)).group_by(Issue.severity).all()
-    )
+    status_counts = db.query(Issue.status, func.count(Issue.id)).group_by(Issue.status).all()
+    severity_counts = db.query(Issue.severity, func.count(Issue.id)).group_by(Issue.severity).all()
     stats_data = {
         "total": total,
         "by_status": {s.value: count for s, count in status_counts},
         "by_severity": {sev.value: count for sev, count in severity_counts},
     }
-    items = (
-        issue.order_by(Issue.created_at.desc())
-        .offset((page - 1) * size)
-        .limit(size)
-        .all()
-    )
+    items = issue.order_by(Issue.created_at.desc()).offset((page - 1) * size).limit(size).all()
     try:
         attached_items = []
         for issue in items:
@@ -117,9 +104,7 @@ def get_issue(
 ):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found.")
 
     response_data = IssueResponse.model_validate(issue)
     for attachment in response_data.attachments:
@@ -137,16 +122,12 @@ async def update_issue(
 ):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found.")
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(issue, field, value)
     db.commit()
-    await manager.broadcast(
-        "dashboard", {"type": "issue_created", "issue_id": str(issue_id)}
-    )
+    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue_id)})
     return (
         db.query(Issue)
         .options(joinedload(Issue.creator), joinedload(Issue.assignee))
@@ -163,9 +144,7 @@ async def delete_issue(
 ):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found."
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Issue not found.")
     if current_user.id != issue.created_by:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -173,7 +152,5 @@ async def delete_issue(
         )
     db.delete(issue)
     db.commit()
-    await manager.broadcast(
-        "dashboard", {"type": "issue_created", "issue_id": str(issue_id)}
-    )
+    await manager.broadcast("dashboard", {"type": "issue_created", "issue_id": str(issue_id)})
     return None

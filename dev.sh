@@ -15,6 +15,14 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+UV_Path() {
+	if [ -f "$HOME/.local/bin/uv" ]; then
+		echo "$HOME/.local/bin/uv"
+	else
+		echo "uv"
+	fi
+}
+
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
 log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -70,19 +78,12 @@ cmd_setup() {
 	docker compose up -d db minio
 	wait_for_postgres
 
-	log_info "Setting up Python virtual environment..."
+	log_info "Setting up Python environment with uv..."
 	cd "$BACKEND_DIR"
-	python -m venv .venv
-	source .venv/bin/activate
-	pip install -r requirements.txt
+	$(UV_Path) sync
 
 	log_info "Running Alembic migrations..."
-	if [ -f ".venv/bin/alembic" ]; then
-		source .venv/bin/activate
-		alembic upgrade head
-	else
-		.venv/bin/python -m alembic upgrade head
-	fi
+	$(UV_Path) run alembic upgrade head
 
 	cd "$SCRIPT_DIR"
 	log_info "Installing frontend dependencies..."
@@ -107,10 +108,7 @@ cmd_up() {
 
 	log_info "Starting backend server..."
 	cd "$BACKEND_DIR"
-	if [ -f ".venv/bin/activate" ]; then
-		source .venv/bin/activate
-	fi
-	nohup uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 >"$LOGS_DIR/backend.log" 2>&1 &
+	nohup $(UV_Path) run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 >"$LOGS_DIR/backend.log" 2>&1 &
 	echo $! >"$PIDS_DIR/backend.pid"
 	sleep 2
 	if ps -p $(cat "$PIDS_DIR/backend.pid") >/dev/null 2>&1; then
@@ -138,7 +136,7 @@ cmd_up() {
 	echo -e "  ${BLUE}Frontend:${NC}  http://localhost:5173"
 	echo -e "  ${BLUE}Backend:${NC}   http://localhost:8000"
 	echo -e "  ${BLUE}API Docs:${NC}  http://localhost:8000/docs"
-	echo -e "  ${BLUE}MinIO:${NC}     http://localhost:9001"
+	echo -e "  ${BLUE}MinIO:${NC}     http://localhost:9003"
 	echo ""
 	log_info "Run '$0 logs' to view combined logs"
 }
@@ -207,6 +205,104 @@ cmd_status() {
 	fi
 }
 
+cmd_lint() {
+	log_info "Running linters and formatters..."
+
+	echo -e "${BLUE}Backend (ruff):${NC}"
+	cd "$BACKEND_DIR"
+	$(UV_Path) run ruff check .
+	$(UV_Path) run ruff format --check .
+
+	echo ""
+	echo -e "${BLUE}Frontend (prettier):${NC}"
+	cd "$FRONTEND_DIR"
+	npm run lint
+
+	log_success "Lint complete"
+}
+
+cmd_format() {
+	log_info "Running formatters..."
+
+	echo -e "${BLUE}Backend (ruff):${NC}"
+	cd "$BACKEND_DIR"
+	$(UV_Path) run ruff format .
+
+	echo ""
+	echo -e "${BLUE}Frontend (prettier):${NC}"
+	cd "$FRONTEND_DIR"
+	npm run format
+
+	log_success "Format complete"
+}
+
+cmd_check() {
+	log_info "Running type checks..."
+
+	echo -e "${BLUE}Frontend (svelte-check):${NC}"
+	cd "$FRONTEND_DIR"
+	npm run check
+
+	log_success "Check complete"
+}
+
+cmd_test() {
+	log_info "Running tests..."
+
+	echo -e "${BLUE}Backend (pytest):${NC}"
+	cd "$BACKEND_DIR"
+	$(UV_Path) run pytest -v
+
+	echo ""
+	echo -e "${BLUE}Frontend:${NC}"
+	cd "$FRONTEND_DIR"
+	if grep -q '"test"' package.json 2>/dev/null; then
+		npm run test
+	else
+		log_warn "No test script found in frontend/package.json"
+	fi
+
+	log_success "Tests complete"
+}
+
+cmd_precommit() {
+	log_info "Installing pre-commit hooks..."
+
+	if ! command -v pre-commit &>/dev/null; then
+		log_info "Installing pre-commit..."
+		if command -v pip &>/dev/null; then
+			pip install pre-commit
+		elif [ -f "$BACKEND_DIR/.venv/bin/pip" ]; then
+			"$BACKEND_DIR/.venv/bin/pip" install pre-commit
+		else
+			log_error "pip not found. Please install pre-commit manually: pip install pre-commit"
+			return 1
+		fi
+	fi
+
+	pre-commit install
+	log_success "Pre-commit hooks installed!"
+	log_info "Hooks will run automatically before each commit"
+}
+
+cmd_db_reset() {
+	need_setup
+
+	log_warn "This will drop and recreate the database!"
+	read -p "Continue? [y/N] " -n 1 -r
+	echo ""
+
+	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+		log_info "Cancelled"
+		return 0
+	fi
+
+	cd "$BACKEND_DIR"
+	$(UV_Path) run alembic downgrade -1
+	$(UV_Path) run alembic upgrade head
+	log_success "Database reset complete"
+}
+
 cmd_clean() {
 	log_warn "This will stop all services and remove:"
 	echo "  - backend/.venv"
@@ -239,13 +335,19 @@ cmd_help() {
 	echo "Usage: $0 <command>"
 	echo ""
 	echo "Commands:"
-	echo "  setup   One-time setup (copy envs, docker, deps, migrations)"
-	echo "  up      Start all services in background"
-	echo "  down    Stop all running services"
-	echo "  logs    Tail combined logs from both services"
-	echo "  status  Show which services are currently running"
-	echo "  clean   Stop services + remove venv, node_modules, and .dev"
-	echo "  help    Show this help message"
+	echo "  setup      One-time setup (copy envs, docker, deps, migrations)"
+	echo "  up         Start all services in background"
+	echo "  down       Stop all running services"
+	echo "  logs       Tail combined logs from both services"
+	echo "  status     Show which services are currently running"
+	echo "  lint       Run linters (ruff, prettier)"
+	echo "  format     Run formatters (ruff, prettier)"
+	echo "  check      Run type checks (svelte-check)"
+	echo "  test       Run all tests (pytest, vitest)"
+	echo "  precommit  Install pre-commit hooks"
+	echo "  db:reset   Drop and recreate database"
+	echo "  clean      Stop services + remove venv, node_modules, and .dev"
+	echo "  help       Show this help message"
 }
 
 case "${1:-help}" in
@@ -254,6 +356,12 @@ up) cmd_up ;;
 down) cmd_down ;;
 logs) cmd_logs ;;
 status) cmd_status ;;
+lint) cmd_lint ;;
+format) cmd_format ;;
+check) cmd_check ;;
+test) cmd_test ;;
+precommit) cmd_precommit ;;
+db:reset) cmd_db_reset ;;
 clean) cmd_clean ;;
 help) cmd_help ;;
 *)

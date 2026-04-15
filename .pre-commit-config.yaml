@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: backend-lint
+        name: Backend Lint (ruff)
+        entry: bash -c "cd backend && uv run ruff check ."
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-format
+        name: Backend Format (ruff)
+        entry: bash -c "cd backend && uv run ruff format ."
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-lint
+        name: Frontend Lint (prettier)
+        entry: bash -c "cd frontend && npm run lint"
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-format
+        name: Frontend Format (prettier)
+        entry: bash -c "cd frontend && npm run format"
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]

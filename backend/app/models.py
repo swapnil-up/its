@@ -1,9 +1,11 @@
-from sqlalchemy import String, Uuid, DateTime, func, Enum, ForeignKey, Text
 import enum
-from sqlalchemy.orm import mapped_column, Mapped, relationship
-from .database import Base
 import uuid
 from datetime import datetime
+
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .database import Base
 
 
 class IssueSeverity(enum.Enum):
@@ -26,9 +28,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(100))
     full_name: Mapped[str] = mapped_column(String(100))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
 
 class Issue(Base):
@@ -43,9 +43,7 @@ class Issue(Base):
         Enum(IssueStatus, native_enum=False), default=IssueStatus.new
     )
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
-    assigned_to: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id"), nullable=True
-    )
+    assigned_to: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
@@ -73,9 +71,7 @@ class Comment(Base):
     author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
     issue: Mapped["Issue"] = relationship("Issue", foreign_keys=[issue_id])
     commenter: Mapped["User"] = relationship("User", foreign_keys=[author_id])
@@ -84,9 +80,7 @@ class Comment(Base):
 class Attachment(Base):
     __tablename__ = "attachments"
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    issue_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("issues.id", ondelete="CASCADE")
-    )
+    issue_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("issues.id", ondelete="CASCADE"))
     uploader_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(100))

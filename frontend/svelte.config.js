@@ -12,10 +12,10 @@ const config = {
 		dynamicCompileOptions: ({ filename }) =>
 			filename.includes('node_modules') ? undefined : { runes: true },
 		inspector: {
-			toggleKeyCombo: 'alt-x', 
+			toggleKeyCombo: 'alt-x',
 			showToggleButton: 'always',
 			holdMode: false
-		},
+		}
 	}
 };
 

@@ -6,10 +6,10 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Select from '$lib/components/ui/select';
 	import { apiFetch } from '$lib/api';
-	import { Plus } from 'lucide-svelte'
+	import { Plus } from 'lucide-svelte';
 	import type { User } from '$lib/types';
 
-	let { onCreated, users=$bindable() }: { onCreated: () => void; users: User[] } = $props();
+	let { onCreated, users = $bindable() }: { onCreated: () => void; users: User[] } = $props();
 
 	let open = $state(false);
 	let title = $state('');
@@ -19,30 +19,34 @@
 	let error = $state<string | null>(null);
 	let assigned_to = $state<string>('');
 
-	let assigneeName = $derived(users.find((u) => u.id === assigned_to)?.full_name ?? "Unassigned");
+	let assigneeName = $derived(users.find((u) => u.id === assigned_to)?.full_name ?? 'Unassigned');
 	let isValid = $derived(title.length > 0 && description.length > 0);
-	$effect(()=>{
-		if (!open){
+	$effect(() => {
+		if (!open) {
 			resetForm();
-		}else{
+		} else {
 			syncFreshData();
 		}
-	})
+	});
 
 	async function syncFreshData() {
-		const usersRes = await apiFetch('/users')
+		const usersRes = await apiFetch('/users');
 		if (usersRes.ok) {
 			users = await usersRes.json();
 		}
 	}
-
 
 	async function handleCreate() {
 		loading = true;
 		error = null;
 		const res = await apiFetch('/issues', {
 			method: 'POST',
-			body: JSON.stringify({ title, description, severity, assigned_to: assigned_to===""? null:assigned_to })
+			body: JSON.stringify({
+				title,
+				description,
+				severity,
+				assigned_to: assigned_to === '' ? null : assigned_to
+			})
 		});
 		if (res.ok) {
 			open = false;
@@ -52,7 +56,9 @@
 			onCreated();
 		} else {
 			const data = await res.json();
-			error = data.detail ? `${data.detail[0].msg} . ${data.detail[0].input}` : 'Failed to create issue';
+			error = data.detail
+				? `${data.detail[0].msg} . ${data.detail[0].input}`
+				: 'Failed to create issue';
 		}
 		loading = false;
 	}
@@ -69,19 +75,19 @@
 		{ label: 'Critical', value: 'critical' }
 	];
 
-	function resetForm(){
+	function resetForm() {
 		title = '';
 		description = '';
 		severity = 'low';
 		loading = false;
 		error = null;
-		assigned_to=""
+		assigned_to = '';
 	}
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger>
-		<Button><Plus class="h-4 w-4 mr-2" /> New Issue</Button>
+		<Button><Plus class="mr-2 h-4 w-4" /> New Issue</Button>
 	</Dialog.Trigger>
 	<Dialog.Content>
 		<Dialog.Header><Dialog.Title>Create Issue</Dialog.Title></Dialog.Header>
@@ -115,7 +121,7 @@
 			</Select.Root>
 		</div>
 		{#if error}
-			<p class="text-destructive break-words">{error}</p>
+			<p class="break-words text-destructive">{error}</p>
 		{/if}
 
 		<Dialog.Footer>

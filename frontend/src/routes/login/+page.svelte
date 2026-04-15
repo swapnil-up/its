@@ -8,7 +8,7 @@
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import { apiFetch } from '$lib/api';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { CheckCircle2 } from "lucide-svelte";
+	import { CheckCircle2 } from 'lucide-svelte';
 
 	let email = $state('');
 	let password = $state('');
@@ -88,12 +88,7 @@
 				</div>
 				<div class="space-y-2">
 					<Label for="password">Password</Label>
-					<Input
-						id="password"
-						type="password"
-						bind:value={password}
-						placeholder="8+ characters"
-					/>
+					<Input id="password" type="password" bind:value={password} placeholder="8+ characters" />
 				</div>
 			</Card.Content>
 			<Card.Footer class="flex flex-col gap-3">

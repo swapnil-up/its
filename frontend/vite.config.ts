@@ -8,9 +8,9 @@ export default defineConfig({
 		noExternal: ['bits-ui']
 	},
 	server: {
-        // inspector can communicate through Docker
-        fs: {
-            allow: ['..']
-        }
-    }
+		// inspector can communicate through Docker
+		fs: {
+			allow: ['..']
+		}
+	}
 });

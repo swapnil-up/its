@@ -1,9 +1,9 @@
-from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
-from uuid import UUID
 from enum import Enum as PyEnum
 from typing import Generic, TypeVar
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 T = TypeVar("T")
 
@@ -40,15 +40,15 @@ class IssueCreate(BaseModel):
     title: str = Field(..., max_length=100)
     description: str
     severity: SeverityEnum = SeverityEnum.low
-    assigned_to: Optional[UUID] = None
+    assigned_to: UUID | None = None
 
 
 class IssueUpdate(BaseModel):
-    title: Optional[str] = Field(None, max_length=100)
-    description: Optional[str] = None
-    severity: Optional[SeverityEnum] = None
-    status: Optional[StatusEnum] = None
-    assigned_to: Optional[UUID] = None
+    title: str | None = Field(None, max_length=100)
+    description: str | None = None
+    severity: SeverityEnum | None = None
+    status: StatusEnum | None = None
+    assigned_to: UUID | None = None
 
 
 class AttachmentResponse(BaseModel):
@@ -71,7 +71,7 @@ class IssueResponse(BaseModel):
     description: str
     severity: str
     status: str
-    assignee: Optional[UserResponse] = None
+    assignee: UserResponse | None = None
     creator: UserResponse
     created_at: datetime
     updated_at: datetime

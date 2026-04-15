@@ -1,17 +1,18 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from .database import get_db
+from contextlib import asynccontextmanager
+
+from alembic.config import Config
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import auth, issues, users, comments, ws, attachments
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from alembic import command
 
 from .core.dependencies import get_current_user
+from .database import get_db
 from .models import User
+from .routers import attachments, auth, comments, issues, users, ws
 from .storage import ensure_bucker_exists
-
-from contextlib import asynccontextmanager
-from alembic.config import Config
-from alembic import command
 
 
 @asynccontextmanager

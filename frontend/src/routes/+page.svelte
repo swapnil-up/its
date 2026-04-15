@@ -12,7 +12,7 @@
 	import { Bug, LogOut, Sun, Moon } from 'lucide-svelte';
 	import { themeStore } from '$lib/stores/theme.svelte';
 	import Pagination from '$lib/components/issues/Pagination.svelte';
-	import {wsClient} from '$lib/websocket.svelte'
+	import { wsClient } from '$lib/websocket.svelte';
 
 	let issues = $state<Issue[]>([]);
 	let users = $state<User[]>([]);
@@ -23,12 +23,12 @@
 	let currentPage = $state(1);
 	let totalPages = $state(0);
 	let totalItems = $state(0);
-	let cleanupWS: (()=>void)|null = null
+	let cleanupWS: (() => void) | null = null;
 
 	let stats = $state({
 		total: 0,
 		by_status: { new: 0, in_progress: 0, resolved: 0, closed: 0 },
-        by_severity: { low: 0, medium: 0, high: 0, critical: 0 }
+		by_severity: { low: 0, medium: 0, high: 0, critical: 0 }
 	});
 
 	$effect(() => {
@@ -36,25 +36,25 @@
 		filters.status;
 		filters.severity;
 		currentPage;
-		fetchIssue()
+		fetchIssue();
 	});
 
 	async function fetchIssue() {
 		loading = true;
 		const params = new URLSearchParams({
-            page: currentPage.toString(),
-            size: PAGE_SIZE.toString(),
-            ...(filters.search && { search: filters.search }),
-            ...(filters.status && { status: filters.status }),
-            ...(filters.severity && { severity: filters.severity })
-        });
+			page: currentPage.toString(),
+			size: PAGE_SIZE.toString(),
+			...(filters.search && { search: filters.search }),
+			...(filters.status && { status: filters.status }),
+			...(filters.severity && { severity: filters.severity })
+		});
 		const res = await apiFetch(`/issues?${params}`);
 		if (res.ok) {
 			const data = await res.json();
 			issues = data.items;
-			totalPages = data.pages
-			totalItems = data.total
-			stats = data.stats
+			totalPages = data.pages;
+			totalItems = data.total;
+			stats = data.stats;
 		}
 		loading = false;
 	}
@@ -78,18 +78,18 @@
 		fetchIssue();
 		fetchUsers();
 
-		wsClient.connect('dashboard')
-		cleanupWS = wsClient.onMessage((msg)=>{
-			if (['issue_created', 'issue_updated', 'issue_deleted'].includes(msg.type)){
-				fetchIssue()
+		wsClient.connect('dashboard');
+		cleanupWS = wsClient.onMessage((msg) => {
+			if (['issue_created', 'issue_updated', 'issue_deleted'].includes(msg.type)) {
+				fetchIssue();
 			}
-		})
+		});
 	});
 
-	onDestroy(()=>{
-		cleanupWS?.()
-		wsClient.disconnect()
-	})
+	onDestroy(() => {
+		cleanupWS?.();
+		wsClient.disconnect();
+	});
 </script>
 
 <div class="min-h-screen bg-background">
@@ -122,7 +122,7 @@
 		</div>
 
 		<IssueTable
-			issues={issues}
+			{issues}
 			{users}
 			{loading}
 			currentUserId={authStore.user?.id ?? ''}
